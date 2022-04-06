@@ -72,10 +72,61 @@ u32 ieee80211_mandatory_rates(struct ieee80211_supported_band *sband,
 }
 EXPORT_SYMBOL(ieee80211_mandatory_rates);
 
+#define START_FREQ_US		902000
+#define START_FREQ_JP_1M	916500
+#define START_FREQ_JP_2M	922500
+#define START_FREQ_JP_4M	906500
+#define START_FREQ_KR		917500
+#define START_FREQ_TW		838500
+#define START_FREQ_EU_1M_1	863000
+#define START_FREQ_EU_1M_2	901400
+#define START_FREQ_CN		755500
+#define START_FREQ_CN_2		779500
+#define START_FREQ_AU_NZ	902000
+#define START_FREQ_SG_1M_1	863000
+#define START_FREQ_SG_1M_2	902000
+
+u8 ah_freq_to_chan(u32 freq_khz)
+{
+	char * alpha2 = get_alpha2();
+	u8 channel_index = 0;
+
+	if (0 == strcmp(alpha2, "US")) {
+		channel_index = (u8)((freq_khz-START_FREQ_US)/500);
+	} else if (0 == strcmp(alpha2, "KR")) {
+		channel_index = (u8)((freq_khz-START_FREQ_KR)/500);
+	} else if (0 == strcmp(alpha2, "JP")) {
+		if ((freq_khz == 924500) || (freq_khz == 925500))
+			channel_index = (u8)((freq_khz-START_FREQ_JP_4M)/500);
+		else if ((freq_khz == 923500) || (freq_khz == 926500))
+			channel_index = (u8)((freq_khz-START_FREQ_JP_2M)/500);
+		else
+			channel_index = (u8)((freq_khz-START_FREQ_JP_1M)/500);
+	} else if (0 == strcmp(alpha2, "EU")) {
+		if (freq_khz < START_FREQ_EU_1M_2)
+			channel_index = (u8)((freq_khz-START_FREQ_EU_1M_1)/500);
+		else
+			channel_index = (u8)((freq_khz-START_FREQ_EU_1M_2)/500);
+	} else if ((0 == strcmp(alpha2, "NZ")) || (0 == strcmp(alpha2, "AU"))) {
+		channel_index = (u8)((freq_khz-START_FREQ_AU_NZ)/500);
+	} else if (0 == strcmp(alpha2, "SG")) {
+		if (freq_khz < START_FREQ_SG_1M_2)
+			channel_index = (u8)((freq_khz-START_FREQ_SG_1M_1)/500);
+		else
+			channel_index = (u8)((freq_khz-START_FREQ_SG_1M_2)/500);
+	} else {
+		printk("[NRC DBG] [%s, %d] not support country:%s\n", __func__,__LINE__,
+			alpha2);
+	}
+	return channel_index;
+}
+
 u32 ieee80211_channel_to_freq_khz(int chan, enum nl80211_band band)
 {
 	/* see 802.11 17.3.8.3.2 and Annex J
 	 * there are overlapping channel numbers in 5GHz and 2GHz bands */
+	char * alpha2 = get_alpha2();
+
 	if (chan <= 0)
 		return 0; /* not supported */
 	switch (band) {
@@ -103,7 +154,32 @@ u32 ieee80211_channel_to_freq_khz(int chan, enum nl80211_band band)
 			return MHZ_TO_KHZ(56160 + chan * 2160);
 		break;
 	case NL80211_BAND_S1GHZ:
-		return 902000 + chan * 500;
+		if (alpha2[0] == 'U' && alpha2[1] =='S') {
+			return START_FREQ_US + chan * 500;
+		} else if (alpha2[0] == 'K' && alpha2[1] =='R') {
+			return START_FREQ_KR + chan * 500;
+		} else if (alpha2[0] == 'J' && alpha2[1] =='P') {
+			if ((9<=chan) && (chan<=21))
+				return START_FREQ_JP_1M + chan * 500;
+			else if ((2<=chan) && (chan<=8))
+				return START_FREQ_JP_2M + chan * 500;
+			else if ((36<=chan) && (chan<=38))
+				return START_FREQ_JP_4M + chan * 500;
+		} else if (alpha2[0] == 'E' && alpha2[1] =='U') {
+			if (chan < 10)
+				return START_FREQ_EU_1M_1 + chan * 500;
+			else
+				return START_FREQ_EU_1M_2 + chan * 500;
+		} else if (alpha2[0] == 'A' && alpha2[1] =='U') {
+			return START_FREQ_AU_NZ + chan * 500;
+		} else if (alpha2[0] == 'N' && alpha2[1] =='Z') {
+			return START_FREQ_AU_NZ + chan * 500;
+		} else if (alpha2[0] == 'S' && alpha2[1] =='G') {
+			if (chan < 12)
+				return START_FREQ_SG_1M_1 + chan * 500;
+			else
+				return START_FREQ_EU_1M_2 + chan * 500;
+		}		
 	default:
 		;
 	}
@@ -141,10 +217,17 @@ EXPORT_SYMBOL(ieee80211_s1g_channel_width);
 int ieee80211_freq_khz_to_channel(u32 freq)
 {
 	/* TODO: just handle MHz for now */
+	u32 freq_khz = freq;
 	freq = KHZ_TO_MHZ(freq);
 
 	/* see 802.11 17.3.8.3.2 and Annex J */
-	if (freq == 2484)
+	/*
+	 * Because the channel and frequency may be matched differently by country, 
+	 * the frequency is temporarily used instead of the channel value.
+	 */
+	if (freq < 1000)
+		return ah_freq_to_chan(freq_khz);
+	else if (freq == 2484)
 		return 14;
 	else if (freq < 2484)
 		return (freq - 2407) / 5;
@@ -1658,6 +1741,10 @@ bool ieee80211_operating_class_to_band(u8 operating_class,
 		return true;
 	case 180:
 		*band = NL80211_BAND_60GHZ;
+		return true;
+	/* Table E-4—Global operating classes */
+	case 64 ... 77:
+		*band = NL80211_BAND_S1GHZ;
 		return true;
 	}
 

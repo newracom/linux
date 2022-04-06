@@ -3030,7 +3030,15 @@ int nl80211_parse_chandef(struct cfg80211_registered_device *rdev,
 
 	memset(chandef, 0, sizeof(*chandef));
 	chandef->chan = ieee80211_get_channel_khz(&rdev->wiphy, control_freq);
-	chandef->width = NL80211_CHAN_WIDTH_20_NOHT;
+
+	if (info->attrs[NL80211_ATTR_CHANNEL_WIDTH]) {
+		chandef->width = nla_get_u32(info->attrs[NL80211_ATTR_CHANNEL_WIDTH]);
+	} else {
+		if (chandef->chan->band != NL80211_BAND_S1GHZ)
+			chandef->width = NL80211_CHAN_WIDTH_20_NOHT;
+		else
+			chandef->width = ieee80211_s1g_channel_width(chandef->chan);
+	}
 	chandef->center_freq1 = KHZ_TO_MHZ(control_freq);
 	chandef->freq1_offset = control_freq % 1000;
 	chandef->center_freq2 = 0;

@@ -105,7 +105,11 @@ static u32 ieee80211_hw_conf_chan(struct ieee80211_local *local)
 		chandef = local->scan_chandef;
 	} else if (local->tmp_channel) {
 		chandef.chan = local->tmp_channel;
-		chandef.width = NL80211_CHAN_WIDTH_20_NOHT;
+		if (chandef.chan->band != NL80211_BAND_S1GHZ)
+			chandef.width = NL80211_CHAN_WIDTH_20_NOHT;
+		else
+			chandef.width = ieee80211_s1g_channel_width(chandef.chan);
+
 		chandef.center_freq1 = chandef.chan->center_freq;
 		chandef.freq1_offset = chandef.chan->freq_offset;
 	} else

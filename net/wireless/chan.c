@@ -33,6 +33,21 @@ void cfg80211_chandef_create(struct cfg80211_chan_def *chandef,
 	chandef->edmg.bw_config = 0;
 	chandef->edmg.channels = 0;
 
+	if (chandef->chan->band == NL80211_BAND_S1GHZ) {
+		switch (chandef->width) {
+			case NL80211_CHAN_WIDTH_1:
+			case NL80211_CHAN_WIDTH_2:
+			case NL80211_CHAN_WIDTH_4:
+			case NL80211_CHAN_WIDTH_8:
+			case NL80211_CHAN_WIDTH_16:
+				break;
+			default:
+				chandef->width = ieee80211_s1g_channel_width(chan);
+		}
+		chandef->center_freq1 = chan->center_freq;
+		return;
+	}
+
 	switch (chan_type) {
 	case NL80211_CHAN_NO_HT:
 		chandef->width = NL80211_CHAN_WIDTH_20_NOHT;

@@ -159,7 +159,12 @@ int __cfg80211_join_mesh(struct cfg80211_registered_device *rdev,
 		if (!setup->chandef.chan)
 			return -EINVAL;
 
-		setup->chandef.width = NL80211_CHAN_WIDTH_20_NOHT;
+		if (setup->chandef.chan->band != NL80211_BAND_S1GHZ)
+			setup->chandef.width = NL80211_CHAN_WIDTH_20_NOHT;
+		else
+			setup->chandef.width =
+				ieee80211_s1g_channel_width(setup->chandef.chan);
+
 		setup->chandef.center_freq1 = setup->chandef.chan->center_freq;
 	}
 

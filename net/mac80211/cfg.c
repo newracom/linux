@@ -3469,7 +3469,9 @@ __ieee80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 		goto out;
 	}
 
-	if (params->chandef.chan->freq_offset) {
+	/* In the s1g band, a kHz offset exists. */
+	if (params->chandef.chan->freq_offset &&
+	    params->chandef.chan->band != NL80211_BAND_S1GHZ) {
 		/* this may work, but is untested */
 		err = -EOPNOTSUPP;
 		goto out;

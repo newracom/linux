@@ -1286,7 +1286,8 @@ static int cmp_bss(struct cfg80211_bss *a,
 	int i, r;
 
 	if (a->channel != b->channel)
-		return b->channel->center_freq - a->channel->center_freq;
+		return (b->channel->center_freq * 1000 + b->channel->freq_offset) -
+		       (a->channel->center_freq * 1000 + a->channel->freq_offset);
 
 	a_ies = rcu_access_pointer(a->ies);
 	if (!a_ies)
@@ -1823,8 +1824,7 @@ cfg80211_get_bss_channel(struct wiphy *wiphy, const u8 *ie, size_t ielen,
 		tmp = cfg80211_find_ie(WLAN_EID_S1G_OPERATION, ie, ielen);
 		if (tmp && tmp[1] >= sizeof(struct ieee80211_s1g_oper_ie)) {
 			struct ieee80211_s1g_oper_ie *s1gop = (void *)(tmp + 2);
-
-			channel_number = s1gop->primary_ch;
+			channel_number = s1gop->oper_ch;
 		}
 	} else {
 		tmp = cfg80211_find_ie(WLAN_EID_DS_PARAMS, ie, ielen);
@@ -1857,6 +1857,9 @@ cfg80211_get_bss_channel(struct wiphy *wiphy, const u8 *ie, size_t ielen,
 			 */
 			return NULL;
 		}
+
+		if (channel->band == NL80211_BAND_S1GHZ)
+			return NULL;
 
 		/* No match for the payload channel number - ignore it */
 		return channel;

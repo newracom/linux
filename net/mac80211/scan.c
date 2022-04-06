@@ -336,6 +336,12 @@ ieee80211_prepare_scan_chandef(struct cfg80211_chan_def *chandef,
 	case NL80211_BSS_CHAN_WIDTH_10:
 		chandef->width = NL80211_CHAN_WIDTH_10;
 		break;
+	case NL80211_BSS_CHAN_WIDTH_1:
+		chandef->width = NL80211_CHAN_WIDTH_1;
+		break;
+	case NL80211_BSS_CHAN_WIDTH_2:
+		chandef->width = NL80211_CHAN_WIDTH_2;
+		break;
 	default:
 		chandef->width = NL80211_CHAN_WIDTH_20_NOHT;
 		break;

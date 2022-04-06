@@ -288,6 +288,12 @@ static const struct ieee80211_regdomain *cfg80211_user_regdom;
 module_param(ieee80211_regdom, charp, 0444);
 MODULE_PARM_DESC(ieee80211_regdom, "IEEE 802.11 regulatory domain code");
 
+
+char * get_alpha2 (void)
+{
+	return user_alpha2;
+}
+
 static void reg_free_request(struct regulatory_request *request)
 {
 	if (request == &core_request_world)
@@ -1959,6 +1965,10 @@ static void handle_channel(struct wiphy *wiphy,
 	const struct ieee80211_reg_rule *rrule2 = NULL;
 
 	u32 flags = chan->orig_flags;
+
+	/* In s1g band, the existing regulation rule is not checked temporarily. */
+	if (chan->band == NL80211_BAND_S1GHZ)
+		return;
 
 	rrule = freq_reg_info(wiphy, orig_chan_freq);
 	if (IS_ERR(rrule)) {

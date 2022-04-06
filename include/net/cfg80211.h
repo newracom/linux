@@ -5575,7 +5575,11 @@ u32 ieee80211_channel_to_freq_khz(int chan, enum nl80211_band band);
 static inline int
 ieee80211_channel_to_frequency(int chan, enum nl80211_band band)
 {
-	return KHZ_TO_MHZ(ieee80211_channel_to_freq_khz(chan, band));
+	/* In the s1g band, a frequency in khz is used. */
+	if (band == NL80211_BAND_S1GHZ)
+		return ieee80211_channel_to_freq_khz(chan, band);
+	else
+		return KHZ_TO_MHZ(ieee80211_channel_to_freq_khz(chan, band));
 }
 
 /**
@@ -5616,7 +5620,11 @@ ieee80211_get_channel_khz(struct wiphy *wiphy, u32 freq);
 static inline struct ieee80211_channel *
 ieee80211_get_channel(struct wiphy *wiphy, int freq)
 {
-	return ieee80211_get_channel_khz(wiphy, MHZ_TO_KHZ(freq));
+	/* It is assumed that frequencies above 400,000 MHz are frequencies used in khz units. */
+	if (freq > 400000)
+		return ieee80211_get_channel_khz(wiphy, freq);
+	else
+		return ieee80211_get_channel_khz(wiphy, MHZ_TO_KHZ(freq));
 }
 
 /**

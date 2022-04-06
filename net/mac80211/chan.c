@@ -363,6 +363,9 @@ static void ieee80211_chan_bw_change(struct ieee80211_local *local,
 				list) {
 		enum ieee80211_sta_rx_bandwidth new_sta_bw;
 
+		if (ctx->conf.def.chan->band == NL80211_BAND_S1GHZ)
+			continue;
+
 		if (!ieee80211_sdata_running(sta->sdata))
 			continue;
 
@@ -427,6 +430,14 @@ static void ieee80211_change_chanctx(struct ieee80211_local *local,
 	case NL80211_CHAN_WIDTH_160:
 		break;
 	default:
+		if (chandef->chan->band == NL80211_BAND_S1GHZ) {
+			case NL80211_CHAN_WIDTH_1:
+			case NL80211_CHAN_WIDTH_2:
+			case NL80211_CHAN_WIDTH_4:
+			case NL80211_CHAN_WIDTH_8:
+			case NL80211_CHAN_WIDTH_16:
+				break;
+		}
 		WARN_ON(1);
 	}
 

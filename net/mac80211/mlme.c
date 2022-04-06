@@ -160,7 +160,11 @@ ieee80211_determine_chantype(struct ieee80211_sub_if_data *sdata,
 
 	memset(chandef, 0, sizeof(struct cfg80211_chan_def));
 	chandef->chan = channel;
-	chandef->width = NL80211_CHAN_WIDTH_20_NOHT;
+	if (channel->band != NL80211_BAND_S1GHZ)
+		chandef->width = NL80211_CHAN_WIDTH_20_NOHT;
+	else
+		chandef->width = ieee80211_s1g_channel_width(channel);
+
 	chandef->center_freq1 = channel->center_freq;
 	chandef->freq1_offset = channel->freq_offset;
 

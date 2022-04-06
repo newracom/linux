@@ -180,6 +180,7 @@ bool reg_dfs_domain_same(struct wiphy *wiphy1, struct wiphy *wiphy2);
  * reg_reload_regdb - reload the regulatory.db firmware file
  */
 int reg_reload_regdb(void);
+char * get_alpha2 (void);
 
 extern const u8 shipped_regdb_certs[];
 extern unsigned int shipped_regdb_certs_len;
